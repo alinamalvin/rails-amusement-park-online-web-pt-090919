@@ -1,12 +1,9 @@
 Rails.application.routes.draw do
-  get 'signup' => 'users#new'
-  post 'signup' => 'users#create'
-  get 'signin'=> 'sessions#login'
-  post 'signin' => 'sessions#create'
-  delete 'logout' => 'sessions#logout'
-  root 'welcome#index'
-
+  root "static_pages#home"
   resources :users, only: [:new, :create, :show]
-  resources :attractions, except: [:destroy]
-  resources :rides, only: [:create]
+  resources :attractions
+  get '/signin', to: 'sessions#new'
+  post '/signin', to: 'sessions#create'
+  delete '/sessions', to: 'sessions#destroy'
+  post '/rides', to: 'rides#create'
 end

@@ -1,38 +1,41 @@
 class Ride < ActiveRecord::Base
-  belongs_to :user
+ belongs_to :user
     belongs_to :attraction
 
     def take_ride
-        raise Exceptions::RideError.new("Sorry. You do not have enough tickets to ride the #{self.attraction.name}. You are not tall enough to ride the #{self.attraction.name}.") if too_short and too_poor
-        raise Exceptions::NotTallEnoughError.new(self.attraction.name) if too_short
-        raise Exceptions::NotEnoughTicketsError.new(self.attraction.name) if too_poor     
-        deduct_tickets
-        update_happiness
-        update_nausea
+        if missing_tickets && too_short
+            "Sorry. " + ticket_message + " " + height_message
+        elsif missing_tickets
+            "Sorry. " + ticket_message
+        elsif too_short
+            "Sorry. " + height_message
+        else
+            go_on_ride
+            "Thanks for riding the #{self.attraction.name}!"
+        end
     end
 
+    def missing_tickets
+        self.user.tickets < self.attraction.tickets
+    end
 
-    private
+    def ticket_message
+        "You do not have enough tickets to ride the #{self.attraction.name}."
+    end
+
     def too_short
         self.user.height < self.attraction.min_height
     end
 
-    def too_poor
-        self.user.tickets < self.attraction.tickets 
-    end
-    def deduct_tickets
-        update_user(:tickets, -1 * self.attraction.tickets)
-    end 
-
-    def update_happiness
-        update_user(:happiness, self.attraction.happiness_rating)
+    def height_message
+        "You are not tall enough to ride the #{self.attraction.name}."
     end
 
-    def update_nausea
-        update_user(:nausea, self.attraction.nausea_rating)
-    end
-
-    def update_user(attribute, value)
-        self.user.update(attribute => (self.user.send(attribute) + value))
+    def go_on_ride
+        self.user.update(
+            :tickets => (self.user.tickets - self.attraction.tickets),
+            :nausea => (self.user.nausea + self.attraction.nausea_rating),
+            :happiness => (self.user.happiness + self.attraction.happiness_rating)
+            )
     end
 end
